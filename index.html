@@ -170,7 +170,7 @@
     /* ── Metrics ── */
     .metrics {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 10px;
       margin-bottom: 1.25rem;
     }
@@ -565,7 +565,7 @@
       <div class="ff" id="s-price"><label>賣出均價（NT$）</label><input type="number" id="f-sp" placeholder="950" step=".01" oninput="calcPreview()" /></div>
 
       <div class="preview-box" id="preview-box">
-        <span>買入金額：<b id="c-ba">—</b></span>
+        <span>買入成本：<b id="c-ba">—</b></span>
         <span>賣出金額：<b id="c-sa">—</b></span>
         <span>損益：<b id="c-pnl">—</b></span>
         <span>持有天數：<b id="c-days">—</b></span>
@@ -585,24 +585,21 @@
 /* ───────────────────────────────────────────────
    DATA STORE
 ─────────────────────────────────────────────── */
-const STORAGE_KEY = 'stockTrackerV3';
-
-const DEFAULT_TRADES = [
+let trades = [
   { id:1, buyDate:'2026-05-14', sellDate:'2026-05-14', code:'00646', name:'元大S&P500',      type:'sell', shares:3000, buyPrice:67.95, sellPrice:73.9,  curPrice:null,  targetPrice:null, pnl:17024, note:'當沖賣出' },
   { id:2, buyDate:'2026-05-14', sellDate:'2026-05-14', code:'0050',  name:'元大台灣50',       type:'sell', shares:3000, buyPrice:79.37, sellPrice:96.25, curPrice:null,  targetPrice:null, pnl:49614, note:'當沖賣出' },
   { id:3, buyDate:'2026-03-07', sellDate:'2026-05-13', code:'00981A',name:'主動統一台股增長', type:'sell', shares:5000, buyPrice:19.9,  sellPrice:29.2,  curPrice:null,  targetPrice:null, pnl:46500, note:'' },
   { id:4, buyDate:'2026-05-14', sellDate:null,         code:'00981A',name:'主動統一台股增長', type:'buy',  shares:7000, buyPrice:29.55, sellPrice:null,  curPrice:29.55, targetPrice:35,   pnl:null,  note:'庫存持有' },
   { id:5, buyDate:'2026-05-14', sellDate:null,         code:'2330',  name:'台積電',           type:'buy',  shares:100,  buyPrice:2245,  sellPrice:null,  curPrice:2245,  targetPrice:2500, pnl:null,  note:'庫存持有' },
 ];
-
-let trades   = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null') || DEFAULT_TRADES;
 let nextId   = Math.max(...trades.map(t => t.id)) + 1;
 let editId   = null;
 let curView  = 'all';
 let curPeriod = 'month';
 
 function save() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(trades)); } catch(e) {}
+  // 資料存在記憶體中，頁面重整會重置為預設資料
+  // 如需永久保存，請使用「匯出」功能
 }
 
 /* ───────────────────────────────────────────────
@@ -701,6 +698,7 @@ function renderAlerts() {
 function renderMetrics(f) {
   const el = document.getElementById('metrics');
   if (curView === 'holding') {
+    el.style.gridTemplateColumns = 'repeat(5, 1fr)';
     const tc = f.reduce((s,t) => s + t.shares * t.buyPrice, 0);
     const tm = f.reduce((s,t) => s + (t.curPrice ? t.shares * t.curPrice : t.shares * t.buyPrice), 0);
     const ur = tm - tc;
@@ -716,6 +714,7 @@ function renderMetrics(f) {
       <div class="mc"><div class="mc-label">達標提醒</div>
         <div class="mc-value" style="color:${ac?'#854F0B':'inherit'}">${ac} 檔</div></div>`;
   } else if (curView === 'history') {
+    el.style.gridTemplateColumns = 'repeat(5, 1fr)';
     const tb  = f.reduce((s,t) => s + t.shares * t.buyPrice, 0);
     const ts  = f.reduce((s,t) => s + (t.sellPrice ? t.shares * t.sellPrice : 0), 0);
     const p   = f.reduce((s,t) => s + (t.pnl || 0), 0);
@@ -724,7 +723,7 @@ function renderMetrics(f) {
     const avg = dA.length ? Math.round(dA.reduce((s,d)=>s+d,0)/dA.length) : null;
     el.innerHTML = `
       <div class="mc"><div class="mc-label">交易筆數</div><div class="mc-value">${f.length}</div></div>
-      <div class="mc"><div class="mc-label">買入金額</div><div class="mc-value">${fmt(tb)}</div></div>
+      <div class="mc"><div class="mc-label">買入成本</div><div class="mc-value">${fmt(tb)}</div></div>
       <div class="mc"><div class="mc-label">賣出金額</div><div class="mc-value">${fmt(ts)}</div></div>
       <div class="mc"><div class="mc-label">已實現損益</div>
         <div class="mc-value ${p>=0?'pos':'neg'}">${fmtP(p)}</div>
@@ -736,12 +735,16 @@ function renderMetrics(f) {
     const sa   = f.filter(t=>t.type==='sell'&&t.sellPrice).reduce((s,t) => s + t.shares * t.sellPrice, 0);
     const rp   = f.reduce((s,t) => s + (t.pnl || 0), 0);
     const holdMkt = trades.filter(t=>t.type==='buy').reduce((s,t) => s + (t.curPrice ? t.shares*t.curPrice : t.shares*t.buyPrice), 0);
+    const holdCost = trades.filter(t=>t.type==='buy').reduce((s,t) => s + t.shares*t.buyPrice, 0);
+    const up   = holdMkt - holdCost;
     const avail = holdMkt + sa;
+    el.style.gridTemplateColumns = 'repeat(3, 1fr)';
     el.innerHTML = `
       <div class="mc"><div class="mc-label">總筆數</div><div class="mc-value">${f.length}</div></div>
-      <div class="mc"><div class="mc-label">買入金額</div><div class="mc-value">${fmt(ba)}</div></div>
+      <div class="mc"><div class="mc-label">買入成本</div><div class="mc-value">${fmt(ba)}</div></div>
       <div class="mc"><div class="mc-label">賣出金額</div><div class="mc-value">${fmt(sa)}</div></div>
-      <div class="mc"><div class="mc-label">已實現損益</div><div class="mc-value ${rp>=0?'pos':'neg'}">${fmtP(rp)}</div></div>
+      <div class="mc"><div class="mc-label">已實現損益</div><div class="mc-value ${rp>=0?'pos':'neg'}">${fmtP(rp)}<div class="mc-sub">${rp>=0?'+':''}${(ba?rp/ba*100:0).toFixed(2)}%</div></div></div>
+      <div class="mc"><div class="mc-label">未實現損益</div><div class="mc-value ${up>=0?'pos':'neg'}">${fmtP(up)}<div class="mc-sub">${up>=0?'+':''}${(holdCost?up/holdCost*100:0).toFixed(2)}%</div></div></div>
       <div class="mc"><div class="mc-label">可用資金估算</div><div class="mc-value pos">${fmt(avail)}</div></div>`;
   }
 }
@@ -808,7 +811,7 @@ function renderTable(f) {
       <th style="width:86px">買入日期</th><th style="width:86px">賣出日期</th><th style="width:52px">天數</th>
       <th style="width:66px">代碼</th><th>名稱</th>
       <th style="width:60px">股數</th><th style="width:80px">買入均價</th><th style="width:80px">賣出均價</th>
-      <th style="width:92px">買入金額</th><th style="width:92px">賣出金額</th>
+      <th style="width:92px">買入成本</th><th style="width:92px">賣出金額</th>
       <th style="width:92px">損益</th><th style="width:56px">操作</th></tr>`;
     tbody.innerHTML = f.map(t => {
       const ba   = t.shares * t.buyPrice;
@@ -826,9 +829,20 @@ function renderTable(f) {
         <td style="text-align:right">${t.sellPrice ? fmtPrice(t.sellPrice) : '—'}</td>
         <td style="text-align:right">${fmtAmt(t.shares, t.buyPrice)}</td>
         <td style="text-align:right">${sa !== null ? fmtAmt(t.shares, t.sellPrice) : '—'}</td>
-        <td style="text-align:right">${t.pnl != null
-          ? `<span class="${t.pnl>=0?'ppos':'pneg'}">${fmtP(t.pnl)}${pPct !== null ? `<br><span style="font-size:11px">${pPct>=0?'+':''}${pPct.toFixed(2)}%</span>` : ''}</span>`
-          : '—'}</td>
+        <td style="text-align:right">${(() => {
+          if (t.type === 'sell') {
+            return t.pnl != null
+              ? `<span class="${t.pnl>=0?'ppos':'pneg'}">${fmtP(t.pnl)}${pPct !== null ? `<br><span style="font-size:11px">${pPct>=0?'+':''}${pPct.toFixed(2)}%</span>` : ''}</span>`
+              : '—';
+          } else {
+            // 買入持有中：顯示未實現損益
+            const cp = t.curPrice;
+            if (!cp) return '<span style="color:var(--text-tertiary)">輸入現價</span>';
+            const ur = (cp - t.buyPrice) * t.shares;
+            const urPct = t.buyPrice ? (cp - t.buyPrice) / t.buyPrice * 100 : 0;
+            return `<span class="${ur>=0?'ppos':'pneg'}">${fmtP(ur)}<br><span style="font-size:11px">${urPct>=0?'+':''}${urPct.toFixed(2)}%</span><br><span style="font-size:10px;color:var(--text-tertiary)">未實現</span></span>`;
+          }
+        })()}</td>
         <td style="text-align:center;white-space:nowrap">
           <button class="btn" style="padding:3px 6px;font-size:13px" onclick="openModal(${t.id})" title="編輯"><i class="ti ti-edit"></i></button>
           <button class="btn" style="padding:3px 6px;font-size:13px;color:var(--red)" onclick="delRecord(${t.id})" title="刪除"><i class="ti ti-trash"></i></button>
@@ -840,8 +854,8 @@ function renderTable(f) {
       <th style="width:86px">買入日期</th><th style="width:86px">賣出日期</th>
       <th style="width:66px">代碼</th><th>名稱</th><th style="width:52px">類型</th>
       <th style="width:60px">股數</th><th style="width:80px">買入均價</th><th style="width:80px">賣出均價</th>
-      <th style="width:92px">買入金額</th><th style="width:92px">賣出金額</th>
-      <th style="width:92px">損益</th><th style="width:56px">操作</th></tr>`;
+      <th style="width:92px">買入成本</th><th style="width:92px">賣出金額</th>
+      <th style="width:105px">損益／未實現</th><th style="width:56px">操作</th></tr>`;
     tbody.innerHTML = f.map(t => {
       const ba   = t.shares * t.buyPrice;
       const sa   = t.sellPrice ? t.shares * t.sellPrice : null;
@@ -862,9 +876,20 @@ function renderTable(f) {
         <td style="text-align:right">${t.sellPrice ? fmtPrice(t.sellPrice) : '—'}</td>
         <td style="text-align:right">${fmtAmt(t.shares, t.buyPrice)}</td>
         <td style="text-align:right">${sa !== null ? fmtAmt(t.shares, t.sellPrice) : '—'}</td>
-        <td style="text-align:right">${t.pnl != null
-          ? `<span class="${t.pnl>=0?'ppos':'pneg'}">${fmtP(t.pnl)}${pPct !== null ? `<br><span style="font-size:11px">${pPct>=0?'+':''}${pPct.toFixed(2)}%</span>` : ''}</span>`
-          : '—'}</td>
+        <td style="text-align:right">${(() => {
+          if (t.type === 'sell') {
+            return t.pnl != null
+              ? `<span class="${t.pnl>=0?'ppos':'pneg'}">${fmtP(t.pnl)}${pPct !== null ? `<br><span style="font-size:11px">${pPct>=0?'+':''}${pPct.toFixed(2)}%</span>` : ''}</span>`
+              : '—';
+          } else {
+            // 買入持有中：顯示未實現損益
+            const cp = t.curPrice;
+            if (!cp) return '<span style="color:var(--text-tertiary)">輸入現價</span>';
+            const ur = (cp - t.buyPrice) * t.shares;
+            const urPct = t.buyPrice ? (cp - t.buyPrice) / t.buyPrice * 100 : 0;
+            return `<span class="${ur>=0?'ppos':'pneg'}">${fmtP(ur)}<br><span style="font-size:11px">${urPct>=0?'+':''}${urPct.toFixed(2)}%</span><br><span style="font-size:10px;color:var(--text-tertiary)">未實現</span></span>`;
+          }
+        })()}</td>
         <td style="text-align:center;white-space:nowrap">
           <button class="btn" style="padding:3px 6px;font-size:13px" onclick="openModal(${t.id})" title="編輯"><i class="ti ti-edit"></i></button>
           <button class="btn" style="padding:3px 6px;font-size:13px;color:var(--red)" onclick="delRecord(${t.id})" title="刪除"><i class="ti ti-trash"></i></button>
@@ -1083,7 +1108,6 @@ function saveRecord() {
    BOOT
 ─────────────────────────────────────────────── */
 // 清除所有舊版 key，強制使用最新資料
-['stockTrackerV1','stockTrackerV2','stockTradesV2','stockTradesV1','stockV3','stockV4','stockV5'].forEach(k => localStorage.removeItem(k));
 buildPeriodSelect();
 renderAll();
 </script>
