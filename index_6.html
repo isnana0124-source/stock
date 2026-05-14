@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>股票交易紀錄系統</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f5f5f4;
+      --bg-tertiary: #eeece6;
+      --text-primary: #1a1a18;
+      --text-secondary: #6b6b67;
+      --text-tertiary: #9f9e9a;
+      --border-light: rgba(26,26,24,0.12);
+      --border-medium: rgba(26,26,24,0.25);
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --green: #1D9E75;
+      --green-bg: #E1F5EE;
+      --green-text: #0F6E56;
+      --red: #D85A30;
+      --red-bg: #FAECE7;
+      --red-text: #993C1D;
+      --amber-bg: #FAEEDA;
+      --amber-border: #EF9F27;
+      --amber-text: #633806;
+      --amber-chip: #FAC775;
+      --amber-chip-text: #412402;
+      --blue-bg: #E6F1FB;
+      --blue-text: #185FA5;
+      --teal-hit-bg: #EAF3DE;
+      --teal-hit-text: #3B6D11;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-primary: #1c1c1a;
+        --bg-secondary: #242422;
+        --bg-tertiary: #2a2a28;
+        --text-primary: #f0ede6;
+        --text-secondary: #a09e9a;
+        --text-tertiary: #6b6a66;
+        --border-light: rgba(240,237,230,0.12);
+        --border-medium: rgba(240,237,230,0.25);
+        --green: #1D9E75;
+        --green-bg: #0a3325;
+        --green-text: #5DCAA5;
+        --red: #D85A30;
+        --red-bg: #3d1a0c;
+        --red-text: #F0997B;
+        --amber-bg: #2e2008;
+        --amber-border: #854F0B;
+        --amber-text: #FAC775;
+        --amber-chip: #412402;
+        --amber-chip-text: #FAC775;
+        --blue-bg: #0a1f35;
+        --blue-text: #85B7EB;
+        --teal-hit-bg: #0f2208;
+        --teal-hit-text: #97C459;
+      }
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', sans-serif;
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    .page-wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 3rem;
+    }
+
+    /* ── Nav tabs ── */
+    .nav-tabs {
+      display: flex;
+      background: var(--bg-secondary);
+      border: 0.5px solid var(--border-light);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    .nav-tab {
+      padding: 7px 15px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      transition: all .15s;
+      white-space: nowrap;
+    }
+    .nav-tab.active {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      box-shadow: 0 0 0 0.5px var(--border-medium);
+    }
+    .nav-tab:hover:not(.active) { background: var(--bg-tertiary); }
+
+    /* ── Top bar ── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+      gap: 10px;
+      background: var(--bg-primary);
+      border: 0.5px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.25rem;
+    }
+    .topbar h1 { font-size: 18px; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+    .topbar p { font-size: 13px; color: var(--text-secondary); margin-top: 3px; }
+
+    /* ── Filter bar ── */
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    .filter-bar select,
+    .filter-bar input[type="text"] {
+      font-size: 13px;
+      padding: 6px 10px;
+      height: 34px;
+      border-radius: var(--radius-md);
+      border: 0.5px solid var(--border-medium);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      outline: none;
+    }
+    .filter-bar select:focus,
+    .filter-bar input:focus { box-shadow: 0 0 0 2px rgba(55,138,221,0.3); }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 13px;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      white-space: nowrap;
+      border: 0.5px solid var(--border-medium);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      transition: background .15s;
+    }
+    .btn:hover { background: var(--bg-secondary); }
+    .btn-primary {
+      background: var(--text-primary);
+      color: var(--bg-primary);
+      border-color: transparent;
+    }
+    .btn-primary:hover { opacity: 0.88; }
+
+    /* ── Metrics ── */
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin-bottom: 1.25rem;
+    }
+    .mc {
+      background: var(--bg-primary);
+      border: 0.5px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 11px 13px;
+    }
+    .mc-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 5px; }
+    .mc-value { font-size: 16px; font-weight: 500; }
+    .mc-value.pos { color: var(--green); }
+    .mc-value.neg { color: var(--red); }
+    .mc-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+
+    /* ── Alert bar ── */
+    .alert-bar {
+      background: var(--amber-bg);
+      border: 0.5px solid var(--amber-border);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .alert-bar.hidden { display: none; }
+    .alert-bar-text { font-size: 13px; color: var(--amber-text); flex: 1; }
+    .alert-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--amber-chip);
+      color: var(--amber-chip-text);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 3px 9px;
+      border-radius: 4px;
+      margin: 2px;
+    }
+
+    /* ── Fund panel ── */
+    .fund-panel {
+      background: var(--bg-primary);
+      border: 0.5px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+    .fund-panel-title {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .fund-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      border: 0.5px solid var(--border-light);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    .fund-cell {
+      padding: 12px 14px;
+      background: var(--bg-primary);
+      border-right: 0.5px solid var(--border-light);
+    }
+    .fund-cell:last-child { border-right: none; }
+    .fund-cell.highlight { background: var(--green-bg); }
+    .fund-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 5px; display: flex; align-items: center; gap: 4px; }
+    .fund-value { font-size: 16px; font-weight: 500; }
+    .fund-value.green { color: var(--green-text); }
+    .fund-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 3px; }
+
+    /* ── Table ── */
+    .table-section {
+      background: var(--bg-primary);
+      border: 0.5px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin-bottom: 1.25rem;
+    }
+    .table-section-title {
+      background: var(--bg-secondary);
+      padding: 10px 14px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      border-bottom: 0.5px solid var(--border-light);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tscroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    thead th {
+      background: var(--bg-secondary);
+      padding: 9px 10px;
+      text-align: left;
+      font-weight: 500;
+      font-size: 11px;
+      color: var(--text-secondary);
+      border-bottom: 0.5px solid var(--border-light);
+      white-space: nowrap;
+    }
+    tbody tr { border-bottom: 0.5px solid var(--border-light); transition: background .1s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--bg-secondary); }
+    tbody tr.alert-row { background: color-mix(in srgb, var(--amber-bg) 20%, transparent); }
+    tbody td { padding: 9px 10px; vertical-align: middle; }
+    tfoot tr { border-top: 0.5px solid var(--border-medium); background: var(--bg-secondary); }
+    tfoot td { padding: 9px 10px; font-size: 12px; font-weight: 500; }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 3px 7px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .b-buy  { background: var(--green-bg);    color: var(--green-text); }
+    .b-sell { background: var(--red-bg);      color: var(--red-text); }
+    .b-hold { background: var(--blue-bg);     color: var(--blue-text); }
+    .b-hit  { background: var(--teal-hit-bg); color: var(--teal-hit-text); }
+
+    /* ── PnL colors ── */
+    .ppos { color: var(--green);  font-weight: 500; }
+    .pneg { color: var(--red);    font-weight: 500; }
+
+    /* ── Inline price input ── */
+    .price-inline {
+      width: 78px;
+      font-size: 12px;
+      padding: 3px 6px;
+      height: 26px;
+      border-radius: 4px;
+      border: 0.5px solid var(--border-medium);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+    .price-inline:focus { outline: none; box-shadow: 0 0 0 2px rgba(55,138,221,0.3); }
+
+    /* ── Progress bar ── */
+    .progress-bar { height: 4px; background: var(--border-light); border-radius: 2px; margin-top: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 2px; transition: width .3s; }
+
+    /* ── Empty state ── */
+    .empty { text-align: center; padding: 2.5rem 1rem; color: var(--text-secondary); font-size: 13px; }
+    .empty i { font-size: 28px; display: block; margin-bottom: 6px; opacity: .4; }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 200;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 48px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--bg-primary);
+      border-radius: var(--radius-lg);
+      border: 0.5px solid var(--border-light);
+      padding: 1.5rem;
+      width: 440px;
+      max-width: 96vw;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal h2 { font-size: 16px; font-weight: 500; margin-bottom: 1.1rem; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .ff { display: flex; flex-direction: column; gap: 4px; }
+    .ff.full { grid-column: span 2; }
+    .ff label { font-size: 11px; color: var(--text-secondary); font-weight: 500; }
+    .ff input, .ff select {
+      font-size: 13px;
+      padding: 7px 9px;
+      border: 0.5px solid var(--border-medium);
+      border-radius: var(--radius-md);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+    .ff input:focus, .ff select:focus { outline: none; box-shadow: 0 0 0 2px rgba(55,138,221,0.3); }
+    .form-divider { grid-column: span 2; border: none; border-top: 0.5px solid var(--border-light); margin: 4px 0; }
+    .form-section-label { grid-column: span 2; font-size: 11px; color: var(--text-tertiary); font-weight: 500; letter-spacing: .05em; }
+    .preview-box {
+      grid-column: span 2;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-md);
+      padding: 9px 12px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      display: none;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .preview-box b { color: var(--text-primary); font-weight: 500; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 1.25rem; }
+
+    /* ── Responsive ── */
+    @media (max-width: 700px) {
+      .metrics { grid-template-columns: repeat(3, 1fr); }
+      .fund-grid { grid-template-columns: repeat(2, 1fr); }
+      .fund-cell:nth-child(2) { border-right: none; }
+      .fund-cell:nth-child(3) { border-top: 0.5px solid var(--border-light); }
+    }
+    @media (max-width: 480px) {
+      .metrics { grid-template-columns: repeat(2, 1fr); }
+      .topbar { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div>
+      <h1><i class="ti ti-chart-candle"></i>股票交易紀錄系統</h1>
+      <p id="view-desc">全部交易紀錄</p>
+    </div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="setView('all')">全部交易</button>
+      <button class="nav-tab" onclick="setView('holding')">
+        <i class="ti ti-briefcase" style="font-size:13px;vertical-align:-1px;margin-right:3px"></i>目前庫存
+      </button>
+      <button class="nav-tab" onclick="setView('history')">歷史交易</button>
+      <button class="nav-tab" onclick="setView('funds')">
+        <i class="ti ti-wallet" style="font-size:13px;vertical-align:-1px;margin-right:3px"></i>可用資金
+      </button>
+    </div>
+  </div>
+
+  <!-- Alert bar -->
+  <div id="alert-bar" class="alert-bar hidden">
+    <i class="ti ti-bell-ringing" style="font-size:16px;color:#854F0B;flex-shrink:0"></i>
+    <div class="alert-bar-text">
+      <strong>價格提醒：</strong><span id="alert-items"></span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       FUNDS VIEW
+  ═══════════════════════════════════════════════ -->
+  <div id="funds-view" style="display:none">
+    <div class="fund-panel">
+      <div class="fund-panel-title">
+        <i class="ti ti-calculator" style="font-size:14px"></i>可用資金計算
+      </div>
+      <div class="fund-grid">
+        <div class="fund-cell">
+          <div class="fund-label"><i class="ti ti-briefcase" style="font-size:12px"></i>庫存市值</div>
+          <div class="fund-value" id="f-holding-val">—</div>
+          <div class="fund-sub" id="f-holding-sub">—</div>
+        </div>
+        <div class="fund-cell">
+          <div class="fund-label"><i class="ti ti-receipt" style="font-size:12px"></i>帳上賣出金額</div>
+          <div class="fund-value" id="f-sold-val">—</div>
+          <div class="fund-sub" id="f-sold-sub">—</div>
+        </div>
+        <div class="fund-cell">
+          <div class="fund-label"><i class="ti ti-trending-up" style="font-size:12px"></i>總損益</div>
+          <div class="fund-value" id="f-pnl-val">—</div>
+          <div class="fund-sub" id="f-pnl-sub">—</div>
+        </div>
+        <div class="fund-cell highlight">
+          <div class="fund-label"><i class="ti ti-coins" style="font-size:12px"></i>可用資金總計</div>
+          <div class="fund-value green" id="f-total-val">—</div>
+          <div class="fund-sub" id="f-total-sub">庫存市值 + 賣出金額</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-section">
+      <div class="table-section-title">
+        <i class="ti ti-briefcase" style="font-size:13px"></i>庫存持股明細
+      </div>
+      <div class="tscroll">
+        <table>
+          <thead>
+            <tr>
+              <th>代碼</th><th>名稱</th><th style="width:65px">股數</th>
+              <th style="width:82px">成本均價</th><th style="width:88px">成本金額</th>
+              <th style="width:92px">現價（NT$）</th><th style="width:92px">現值</th>
+              <th style="width:105px">未實現損益</th>
+            </tr>
+          </thead>
+          <tbody id="fund-holding-tbody"></tbody>
+          <tfoot id="fund-holding-tfoot"></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <div class="table-section">
+      <div class="table-section-title">
+        <i class="ti ti-receipt" style="font-size:13px"></i>帳上賣出紀錄
+      </div>
+      <div class="tscroll">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:88px">日期</th><th>代碼</th><th>名稱</th>
+              <th style="width:65px">股數</th><th style="width:82px">賣出均價</th>
+              <th style="width:98px">賣出金額</th><th style="width:95px">損益</th>
+            </tr>
+          </thead>
+          <tbody id="fund-sold-tbody"></tbody>
+          <tfoot id="fund-sold-tfoot"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       MAIN VIEW (all / holding / history)
+  ═══════════════════════════════════════════════ -->
+  <div id="main-view">
+    <div class="filter-bar">
+      <div id="period-ui" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <div class="nav-tabs" style="font-size:12px">
+          <button class="nav-tab active" data-p="month" onclick="setPeriod('month')">每月</button>
+          <button class="nav-tab" data-p="quarter" onclick="setPeriod('quarter')">每季</button>
+          <button class="nav-tab" data-p="year" onclick="setPeriod('year')">每年</button>
+        </div>
+        <select id="period-sel" onchange="renderAll()"><option value="">全部期間</option></select>
+      </div>
+      <select id="type-f" onchange="renderAll()">
+        <option value="">全部類型</option>
+        <option value="buy">買入</option>
+        <option value="sell">賣出</option>
+      </select>
+      <input type="text" id="search-f" placeholder="搜尋代碼或名稱…" oninput="renderAll()" style="min-width:145px" />
+      <button class="btn btn-primary" onclick="openModal()">
+        <i class="ti ti-plus"></i>新增交易
+      </button>
+    </div>
+
+    <div class="metrics" id="metrics"></div>
+
+    <div class="table-section">
+      <div class="tscroll">
+        <table>
+          <thead id="thead-row"></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <div class="empty" id="empty-msg" style="display:none">
+          <i class="ti ti-inbox"></i>此條件沒有資料
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page-wrap -->
+
+<!-- ═══════════════════════════════════════════════
+     MODAL
+═══════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeMBg(event)">
+  <div class="modal">
+    <h2 id="modal-title">新增交易紀錄</h2>
+    <div class="form-grid">
+      <div class="ff"><label>買入日期 *</label><input type="date" id="f-bd" /></div>
+      <div class="ff">
+        <label>類型 *</label>
+        <select id="f-type" onchange="toggleSell()">
+          <option value="buy">買入（持有中）</option>
+          <option value="sell">已賣出</option>
+        </select>
+      </div>
+      <div class="ff"><label>股票代碼 *</label><input type="text" id="f-code" placeholder="例：2330" /></div>
+      <div class="ff"><label>股票名稱 *</label><input type="text" id="f-name" placeholder="例：台積電" /></div>
+      <div class="ff"><label>股數 *</label><input type="number" id="f-shares" placeholder="1000" min="1" oninput="calcPreview()" /></div>
+      <div class="ff"><label>買入均價（NT$） *</label><input type="number" id="f-bp" placeholder="850" step=".01" oninput="calcPreview()" /></div>
+      <div class="ff"><label>目前現價（NT$）</label><input type="number" id="f-cp" placeholder="900" step=".01" /></div>
+      <div class="ff"><label>預計賣出價（NT$）</label><input type="number" id="f-tp" placeholder="950" step=".01" /></div>
+
+      <hr class="form-divider" id="s-div" />
+      <div class="form-section-label" id="s-label">賣出資訊</div>
+      <div class="ff" id="s-date"><label>賣出日期</label><input type="date" id="f-sd" oninput="calcPreview()" /></div>
+      <div class="ff" id="s-price"><label>賣出均價（NT$）</label><input type="number" id="f-sp" placeholder="950" step=".01" oninput="calcPreview()" /></div>
+
+      <div class="preview-box" id="preview-box">
+        <span>買入金額：<b id="c-ba">—</b></span>
+        <span>賣出金額：<b id="c-sa">—</b></span>
+        <span>損益：<b id="c-pnl">—</b></span>
+        <span>持有天數：<b id="c-days">—</b></span>
+      </div>
+
+      <div class="ff"><label>手動損益（選填，覆蓋自動計算）</label><input type="number" id="f-pnl" placeholder="自動計算" /></div>
+      <div class="ff"><label>備註</label><input type="text" id="f-note" placeholder="策略、原因…" /></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveRecord()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ───────────────────────────────────────────────
+   DATA STORE
+─────────────────────────────────────────────── */
+const STORAGE_KEY = 'stockTrackerV3';
+
+const DEFAULT_TRADES = [
+  { id:1, buyDate:'2026-05-14', sellDate:'2026-05-14', code:'00646', name:'元大S&P500',      type:'sell', shares:3000, buyPrice:67.95, sellPrice:73.9,  curPrice:null,  targetPrice:null, pnl:17024, note:'當沖賣出' },
+  { id:2, buyDate:'2026-05-14', sellDate:'2026-05-14', code:'0050',  name:'元大台灣50',       type:'sell', shares:3000, buyPrice:79.37, sellPrice:96.25, curPrice:null,  targetPrice:null, pnl:49614, note:'當沖賣出' },
+  { id:3, buyDate:'2026-03-07', sellDate:'2026-05-13', code:'00981A',name:'主動統一台股增長', type:'sell', shares:5000, buyPrice:19.9,  sellPrice:29.2,  curPrice:null,  targetPrice:null, pnl:46500, note:'' },
+  { id:4, buyDate:'2026-05-14', sellDate:null,         code:'00981A',name:'主動統一台股增長', type:'buy',  shares:7000, buyPrice:29.55, sellPrice:null,  curPrice:29.55, targetPrice:35,   pnl:null,  note:'庫存持有' },
+  { id:5, buyDate:'2026-05-14', sellDate:null,         code:'2330',  name:'台積電',           type:'buy',  shares:100,  buyPrice:2245,  sellPrice:null,  curPrice:2245,  targetPrice:2500, pnl:null,  note:'庫存持有' },
+];
+
+let trades   = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null') || DEFAULT_TRADES;
+let nextId   = Math.max(...trades.map(t => t.id)) + 1;
+let editId   = null;
+let curView  = 'all';
+let curPeriod = 'month';
+
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(trades)); } catch(e) {}
+}
+
+/* ───────────────────────────────────────────────
+   HELPERS
+─────────────────────────────────────────────── */
+function fmt(v)  { return 'NT$' + Math.round(v).toLocaleString(); }
+function fmtP(v) { return (v >= 0 ? '+' : '') + Math.round(v).toLocaleString(); }
+/* 精確金額：shares × price 不四捨五入，保留至整數但以精確乘積計算 */
+function fmtAmt(shares, price) {
+  const exact = shares * price;
+  return 'NT$' + exact.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+/* 均價顯示：保留最多 4 位小數，去除尾零 */
+function fmtPrice(v) {
+  return 'NT$' + parseFloat(v.toFixed(4)).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 4 });
+}
+function daysBetween(a, b) {
+  if (!a || !b) return null;
+  return Math.round((new Date(b) - new Date(a)) / 86400000);
+}
+function getPeriodKey(t) {
+  const d = new Date(t.buyDate);
+  const y = d.getFullYear(), m = d.getMonth() + 1, q = Math.ceil(m / 3);
+  if (curPeriod === 'month')   return `${y}-${String(m).padStart(2,'0')}`;
+  if (curPeriod === 'quarter') return `${y}-Q${q}`;
+  return `${y}`;
+}
+function getPeriodLabel(k) {
+  if (curPeriod === 'month')   { const [y,m] = k.split('-'); return `${y}年 ${parseInt(m)}月`; }
+  if (curPeriod === 'quarter') { const [y,q] = k.split('-'); return `${y}年 ${q}`; }
+  return `${k}年`;
+}
+
+/* ───────────────────────────────────────────────
+   VIEW SWITCHING
+─────────────────────────────────────────────── */
+function setView(v) {
+  curView = v;
+  document.querySelectorAll('.nav-tab[onclick^="setView"]')
+    .forEach(t => t.classList.toggle('active', t.getAttribute('onclick').includes(`'${v}'`)));
+  const isMain = v !== 'funds';
+  document.getElementById('main-view').style.display  = isMain ? '' : 'none';
+  document.getElementById('funds-view').style.display = isMain ? 'none' : '';
+  document.getElementById('period-ui').style.display  = (isMain && v !== 'holding') ? 'flex' : 'none';
+  document.getElementById('type-f').style.display     = (isMain && v !== 'holding') ? '' : 'none';
+  buildPeriodSelect();
+  renderAll();
+}
+
+function setPeriod(p) {
+  curPeriod = p;
+  document.querySelectorAll('[data-p]').forEach(t => t.classList.toggle('active', t.dataset.p === p));
+  buildPeriodSelect();
+  renderAll();
+}
+
+function buildPeriodSelect() {
+  if (curView === 'holding' || curView === 'funds') return;
+  const src = curView === 'history' ? trades.filter(t => t.type === 'sell') : trades;
+  const keys = [...new Set(src.map(t => getPeriodKey(t)))].sort().reverse();
+  const sel  = document.getElementById('period-sel');
+  const prev = sel.value;
+  sel.innerHTML = `<option value="">全部期間</option>` +
+    keys.map(k => `<option value="${k}">${getPeriodLabel(k)}</option>`).join('');
+  if (keys.includes(prev)) sel.value = prev;
+}
+
+function getFiltered() {
+  const period = document.getElementById('period-sel').value;
+  const type   = document.getElementById('type-f').value;
+  const search = document.getElementById('search-f').value.toLowerCase().trim();
+  let src = trades;
+  if (curView === 'holding') src = trades.filter(t => t.type === 'buy');
+  if (curView === 'history') src = trades.filter(t => t.type === 'sell');
+  return src.filter(t => {
+    if ((curView === 'all' || curView === 'history') && period && getPeriodKey(t) !== period) return false;
+    if ((curView === 'all' || curView === 'history') && type   && t.type !== type)             return false;
+    if (search && !t.code.toLowerCase().includes(search) && !t.name.toLowerCase().includes(search)) return false;
+    return true;
+  }).sort((a, b) => b.buyDate.localeCompare(a.buyDate));
+}
+
+/* ───────────────────────────────────────────────
+   RENDER HELPERS
+─────────────────────────────────────────────── */
+function renderAlerts() {
+  const hits = trades.filter(t => t.type === 'buy' && t.curPrice && t.targetPrice && t.curPrice >= t.targetPrice);
+  const bar  = document.getElementById('alert-bar');
+  if (!hits.length) { bar.classList.add('hidden'); return; }
+  bar.classList.remove('hidden');
+  document.getElementById('alert-items').innerHTML = hits.map(t =>
+    `<span class="alert-chip"><i class="ti ti-bell" style="font-size:11px"></i>${t.code} ${t.name}：現價 NT$${t.curPrice} ≥ 目標 NT$${t.targetPrice}</span>`
+  ).join('');
+}
+
+function renderMetrics(f) {
+  const el = document.getElementById('metrics');
+  if (curView === 'holding') {
+    const tc = f.reduce((s,t) => s + t.shares * t.buyPrice, 0);
+    const tm = f.reduce((s,t) => s + (t.curPrice ? t.shares * t.curPrice : t.shares * t.buyPrice), 0);
+    const ur = tm - tc;
+    const urP = tc ? ur / tc * 100 : 0;
+    const ac  = f.filter(t => t.curPrice && t.targetPrice && t.curPrice >= t.targetPrice).length;
+    el.innerHTML = `
+      <div class="mc"><div class="mc-label">持倉檔數</div><div class="mc-value">${f.length}</div></div>
+      <div class="mc"><div class="mc-label">總成本</div><div class="mc-value">${fmt(tc)}</div></div>
+      <div class="mc"><div class="mc-label">市值</div><div class="mc-value">${fmt(tm)}</div></div>
+      <div class="mc"><div class="mc-label">未實現損益</div>
+        <div class="mc-value ${ur>=0?'pos':'neg'}">${fmtP(ur)}</div>
+        <div class="mc-sub">${urP>=0?'+':''}${urP.toFixed(2)}%</div></div>
+      <div class="mc"><div class="mc-label">達標提醒</div>
+        <div class="mc-value" style="color:${ac?'#854F0B':'inherit'}">${ac} 檔</div></div>`;
+  } else if (curView === 'history') {
+    const tb  = f.reduce((s,t) => s + t.shares * t.buyPrice, 0);
+    const ts  = f.reduce((s,t) => s + (t.sellPrice ? t.shares * t.sellPrice : 0), 0);
+    const p   = f.reduce((s,t) => s + (t.pnl || 0), 0);
+    const pP  = tb ? p / tb * 100 : 0;
+    const dA  = f.filter(t=>t.sellDate).map(t=>daysBetween(t.buyDate,t.sellDate)).filter(d=>d!==null);
+    const avg = dA.length ? Math.round(dA.reduce((s,d)=>s+d,0)/dA.length) : null;
+    el.innerHTML = `
+      <div class="mc"><div class="mc-label">交易筆數</div><div class="mc-value">${f.length}</div></div>
+      <div class="mc"><div class="mc-label">買入金額</div><div class="mc-value">${fmt(tb)}</div></div>
+      <div class="mc"><div class="mc-label">賣出金額</div><div class="mc-value">${fmt(ts)}</div></div>
+      <div class="mc"><div class="mc-label">已實現損益</div>
+        <div class="mc-value ${p>=0?'pos':'neg'}">${fmtP(p)}</div>
+        <div class="mc-sub">${pP>=0?'+':''}${pP.toFixed(2)}%</div></div>
+      <div class="mc"><div class="mc-label">平均持有天數</div>
+        <div class="mc-value">${avg!==null?avg+'天':'—'}</div></div>`;
+  } else {
+    const ba   = f.filter(t=>t.type==='buy').reduce((s,t) => s + t.shares * t.buyPrice, 0);
+    const sa   = f.filter(t=>t.type==='sell'&&t.sellPrice).reduce((s,t) => s + t.shares * t.sellPrice, 0);
+    const rp   = f.reduce((s,t) => s + (t.pnl || 0), 0);
+    const holdMkt = trades.filter(t=>t.type==='buy').reduce((s,t) => s + (t.curPrice ? t.shares*t.curPrice : t.shares*t.buyPrice), 0);
+    const avail = holdMkt + sa;
+    el.innerHTML = `
+      <div class="mc"><div class="mc-label">總筆數</div><div class="mc-value">${f.length}</div></div>
+      <div class="mc"><div class="mc-label">買入金額</div><div class="mc-value">${fmt(ba)}</div></div>
+      <div class="mc"><div class="mc-label">賣出金額</div><div class="mc-value">${fmt(sa)}</div></div>
+      <div class="mc"><div class="mc-label">已實現損益</div><div class="mc-value ${rp>=0?'pos':'neg'}">${fmtP(rp)}</div></div>
+      <div class="mc"><div class="mc-label">可用資金估算</div><div class="mc-value pos">${fmt(avail)}</div></div>`;
+  }
+}
+
+/* ───────────────────────────────────────────────
+   RENDER TABLE
+─────────────────────────────────────────────── */
+function renderTable(f) {
+  const thead = document.getElementById('thead-row');
+  const tbody = document.getElementById('tbody');
+  const empty = document.getElementById('empty-msg');
+  if (!f.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  if (curView === 'holding') {
+    thead.innerHTML = `<tr>
+      <th style="width:82px">買入日期</th><th style="width:68px">代碼</th><th>名稱</th>
+      <th style="width:60px">股數</th><th style="width:80px">成本均價</th><th style="width:88px">成本金額</th>
+      <th style="width:92px">現價（NT$）</th><th style="width:88px">現值</th>
+      <th style="width:105px">未實現損益</th><th style="width:95px">目標賣出價</th>
+      <th style="width:70px">達標率</th><th style="width:56px">操作</th></tr>`;
+    tbody.innerHTML = f.map(t => {
+      const cost = t.shares * t.buyPrice;
+      const mkt  = t.curPrice ? t.shares * t.curPrice : null;
+      const ur   = mkt !== null ? mkt - cost : null;
+      const urP  = ur !== null && cost ? ur / cost * 100 : null;
+      const isAlert = t.curPrice && t.targetPrice && t.curPrice >= t.targetPrice;
+      const prog    = (t.curPrice && t.targetPrice && t.targetPrice !== t.buyPrice)
+        ? Math.min(100, Math.max(0, Math.round((t.curPrice - t.buyPrice) / (t.targetPrice - t.buyPrice) * 100))) : null;
+      const pc = prog >= 100 ? '#1D9E75' : prog >= 70 ? '#EF9F27' : '#378ADD';
+      return `<tr class="${isAlert ? 'alert-row' : ''}">
+        <td style="color:var(--text-secondary);font-size:12px">${t.buyDate}</td>
+        <td style="font-weight:500">${t.code}</td>
+        <td style="white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis">${t.name}${t.note ? `<span style="font-size:11px;color:var(--text-tertiary);margin-left:5px">${t.note}</span>` : ''}</td>
+        <td style="text-align:right">${t.shares.toLocaleString()}</td>
+        <td style="text-align:right">${fmtPrice(t.buyPrice)}</td>
+        <td style="text-align:right">${fmtAmt(t.shares, t.buyPrice)}</td>
+        <td style="text-align:right">
+          <input class="price-inline" type="number" value="${t.curPrice||''}" placeholder="輸入"
+            onchange="updateCur(${t.id},this.value)" step=".01" />
+        </td>
+        <td style="text-align:right">${mkt !== null ? fmtAmt(t.shares, t.curPrice) : '—'}</td>
+        <td style="text-align:right">${ur !== null
+          ? `<span class="${ur>=0?'ppos':'pneg'}">${fmtP(ur)}<br><span style="font-size:11px">${urP>=0?'+':''}${urP.toFixed(1)}%</span></span>`
+          : '—'}</td>
+        <td style="text-align:right">
+          <input class="price-inline" type="number" value="${t.targetPrice||''}" placeholder="設定"
+            onchange="updateTarget(${t.id},this.value)" step=".01"
+            style="${isAlert ? 'border-color:#EF9F27' : ''}" />
+          ${isAlert ? '<br><span class="badge b-hit" style="font-size:10px;margin-top:3px"><i class="ti ti-bell" style="font-size:10px"></i> 達標</span>' : ''}
+        </td>
+        <td style="text-align:center">${prog !== null
+          ? `<div style="font-size:11px;color:var(--text-secondary);margin-bottom:3px">${prog}%</div>
+             <div class="progress-bar"><div class="progress-fill" style="width:${prog}%;background:${pc}"></div></div>`
+          : '—'}</td>
+        <td style="text-align:center;white-space:nowrap">
+          <button class="btn" style="padding:3px 6px;font-size:13px" onclick="openModal(${t.id})" title="編輯"><i class="ti ti-edit"></i></button>
+          <button class="btn" style="padding:3px 6px;font-size:13px;color:var(--red)" onclick="delRecord(${t.id})" title="刪除"><i class="ti ti-trash"></i></button>
+        </td></tr>`;
+    }).join('');
+
+  } else if (curView === 'history') {
+    thead.innerHTML = `<tr>
+      <th style="width:86px">買入日期</th><th style="width:86px">賣出日期</th><th style="width:52px">天數</th>
+      <th style="width:66px">代碼</th><th>名稱</th>
+      <th style="width:60px">股數</th><th style="width:80px">買入均價</th><th style="width:80px">賣出均價</th>
+      <th style="width:92px">買入金額</th><th style="width:92px">賣出金額</th>
+      <th style="width:92px">損益</th><th style="width:56px">操作</th></tr>`;
+    tbody.innerHTML = f.map(t => {
+      const ba   = t.shares * t.buyPrice;
+      const sa   = t.sellPrice ? t.shares * t.sellPrice : null;
+      const d    = daysBetween(t.buyDate, t.sellDate);
+      const pPct = ba && t.pnl != null ? t.pnl / ba * 100 : null;
+      return `<tr>
+        <td style="color:var(--text-secondary);font-size:12px">${t.buyDate}</td>
+        <td style="font-size:12px">${t.sellDate || '—'}</td>
+        <td style="text-align:center;color:var(--text-secondary)">${d !== null ? (d === 0 ? '當沖' : d + '天') : '—'}</td>
+        <td style="font-weight:500">${t.code}</td>
+        <td style="white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis">${t.name}${t.note ? `<span style="font-size:11px;color:var(--text-tertiary);margin-left:5px">${t.note}</span>` : ''}</td>
+        <td style="text-align:right">${t.shares.toLocaleString()}</td>
+        <td style="text-align:right">${fmtPrice(t.buyPrice)}</td>
+        <td style="text-align:right">${t.sellPrice ? fmtPrice(t.sellPrice) : '—'}</td>
+        <td style="text-align:right">${fmtAmt(t.shares, t.buyPrice)}</td>
+        <td style="text-align:right">${sa !== null ? fmtAmt(t.shares, t.sellPrice) : '—'}</td>
+        <td style="text-align:right">${t.pnl != null
+          ? `<span class="${t.pnl>=0?'ppos':'pneg'}">${fmtP(t.pnl)}${pPct !== null ? `<br><span style="font-size:11px">${pPct>=0?'+':''}${pPct.toFixed(2)}%</span>` : ''}</span>`
+          : '—'}</td>
+        <td style="text-align:center;white-space:nowrap">
+          <button class="btn" style="padding:3px 6px;font-size:13px" onclick="openModal(${t.id})" title="編輯"><i class="ti ti-edit"></i></button>
+          <button class="btn" style="padding:3px 6px;font-size:13px;color:var(--red)" onclick="delRecord(${t.id})" title="刪除"><i class="ti ti-trash"></i></button>
+        </td></tr>`;
+    }).join('');
+
+  } else {
+    thead.innerHTML = `<tr>
+      <th style="width:86px">買入日期</th><th style="width:86px">賣出日期</th>
+      <th style="width:66px">代碼</th><th>名稱</th><th style="width:52px">類型</th>
+      <th style="width:60px">股數</th><th style="width:80px">買入均價</th><th style="width:80px">賣出均價</th>
+      <th style="width:92px">買入金額</th><th style="width:92px">賣出金額</th>
+      <th style="width:92px">損益</th><th style="width:56px">操作</th></tr>`;
+    tbody.innerHTML = f.map(t => {
+      const ba   = t.shares * t.buyPrice;
+      const sa   = t.sellPrice ? t.shares * t.sellPrice : null;
+      const badge = t.type === 'buy'
+        ? '<span class="badge b-buy">買入</span>'
+        : '<span class="badge b-sell">賣出</span>';
+      const pPct = ba && t.pnl != null ? t.pnl / ba * 100 : null;
+      return `<tr>
+        <td style="color:var(--text-secondary);font-size:12px">${t.buyDate}</td>
+        <td style="font-size:12px">${t.sellDate
+          ? t.sellDate
+          : '<span class="badge b-hold" style="font-size:10px">持有中</span>'}</td>
+        <td style="font-weight:500">${t.code}</td>
+        <td style="white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis">${t.name}${t.note ? `<span style="font-size:11px;color:var(--text-tertiary);margin-left:5px">${t.note}</span>` : ''}</td>
+        <td>${badge}</td>
+        <td style="text-align:right">${t.shares.toLocaleString()}</td>
+        <td style="text-align:right">${fmtPrice(t.buyPrice)}</td>
+        <td style="text-align:right">${t.sellPrice ? fmtPrice(t.sellPrice) : '—'}</td>
+        <td style="text-align:right">${fmtAmt(t.shares, t.buyPrice)}</td>
+        <td style="text-align:right">${sa !== null ? fmtAmt(t.shares, t.sellPrice) : '—'}</td>
+        <td style="text-align:right">${t.pnl != null
+          ? `<span class="${t.pnl>=0?'ppos':'pneg'}">${fmtP(t.pnl)}${pPct !== null ? `<br><span style="font-size:11px">${pPct>=0?'+':''}${pPct.toFixed(2)}%</span>` : ''}</span>`
+          : '—'}</td>
+        <td style="text-align:center;white-space:nowrap">
+          <button class="btn" style="padding:3px 6px;font-size:13px" onclick="openModal(${t.id})" title="編輯"><i class="ti ti-edit"></i></button>
+          <button class="btn" style="padding:3px 6px;font-size:13px;color:var(--red)" onclick="delRecord(${t.id})" title="刪除"><i class="ti ti-trash"></i></button>
+        </td></tr>`;
+    }).join('');
+  }
+}
+
+/* ───────────────────────────────────────────────
+   RENDER FUNDS VIEW
+─────────────────────────────────────────────── */
+function renderFunds() {
+  const holdings = trades.filter(t => t.type === 'buy');
+  const soldList  = trades.filter(t => t.type === 'sell');
+
+  const holdCost = holdings.reduce((s,t) => s + t.shares * t.buyPrice, 0);
+  const holdMkt  = holdings.reduce((s,t) => s + (t.curPrice ? t.shares * t.curPrice : t.shares * t.buyPrice), 0);
+  const holdUR   = holdMkt - holdCost;
+
+  const soldAmt  = soldList.reduce((s,t) => s + (t.sellPrice ? t.shares * t.sellPrice : 0), 0);
+  const soldPnl  = soldList.reduce((s,t) => s + (t.pnl || 0), 0);
+
+  const totalPnl = holdUR + soldPnl;
+  const total    = holdMkt + soldAmt;
+
+  document.getElementById('f-holding-val').textContent = fmt(holdMkt);
+  document.getElementById('f-holding-sub').textContent = `${holdings.length} 檔持股　成本 ${fmt(holdCost)}`;
+  document.getElementById('f-sold-val').textContent    = fmt(soldAmt);
+  document.getElementById('f-sold-sub').textContent    = `${soldList.length} 筆賣出紀錄`;
+
+  const pnlEl = document.getElementById('f-pnl-val');
+  pnlEl.textContent = (totalPnl >= 0 ? '+' : '') + fmt(totalPnl);
+  pnlEl.style.color = totalPnl >= 0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('f-pnl-sub').textContent = `未實現 ${fmtP(holdUR)} ／ 已實現 ${fmtP(soldPnl)}`;
+
+  document.getElementById('f-total-val').textContent = fmt(total);
+  document.getElementById('f-total-sub').textContent = `${fmt(holdMkt)} 市值 ＋ ${fmt(soldAmt)} 賣出`;
+
+  // holdings table
+  document.getElementById('fund-holding-tbody').innerHTML = holdings.map(t => {
+    const cost = t.shares * t.buyPrice;
+    const mkt  = t.curPrice ? t.shares * t.curPrice : cost;
+    const ur   = mkt - cost;
+    const pct  = cost ? ur / cost * 100 : 0;
+    return `<tr>
+      <td style="font-weight:500">${t.code}</td><td style="white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis">${t.name}</td>
+      <td style="text-align:right">${t.shares.toLocaleString()}</td>
+      <td style="text-align:right">${fmtPrice(t.buyPrice)}</td>
+      <td style="text-align:right">${fmtAmt(t.shares, t.buyPrice)}</td>
+      <td style="text-align:right">
+        <input class="price-inline" type="number" value="${t.curPrice||''}" placeholder="輸入"
+          onchange="updateCur(${t.id},this.value)" step=".01" />
+      </td>
+      <td style="text-align:right;font-weight:500">${fmtAmt(t.shares, t.curPrice ? t.curPrice : t.buyPrice)}</td>
+      <td style="text-align:right"><span class="${ur>=0?'ppos':'pneg'}">${fmtP(ur)}<br><span style="font-size:11px">${pct>=0?'+':''}${pct.toFixed(1)}%</span></span></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('fund-holding-tfoot').innerHTML = `
+    <tr><td colspan="4">合計</td>
+    <td style="text-align:right">${fmt(holdCost)}</td>
+    <td>—</td>
+    <td style="text-align:right;color:var(--green-text)">${fmt(holdMkt)}</td>
+    <td style="text-align:right"><span class="${holdUR>=0?'ppos':'pneg'}">${fmtP(holdUR)}</span></td></tr>`;
+
+  // sold table
+  document.getElementById('fund-sold-tbody').innerHTML = soldList.map(t => {
+    const sa   = t.sellPrice ? t.shares * t.sellPrice : 0;
+    const pct  = t.pnl != null && t.shares * t.buyPrice ? t.pnl / (t.shares * t.buyPrice) * 100 : null;
+    return `<tr>
+      <td style="color:var(--text-secondary);font-size:12px">${t.sellDate || t.buyDate}</td>
+      <td style="font-weight:500">${t.code}</td><td style="white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis">${t.name}</td>
+      <td style="text-align:right">${t.shares.toLocaleString()}</td>
+      <td style="text-align:right">${t.sellPrice ? fmtPrice(t.sellPrice) : '—'}</td>
+      <td style="text-align:right;font-weight:500">${t.sellPrice ? fmtAmt(t.shares, t.sellPrice) : '—'}</td>
+      <td style="text-align:right">${t.pnl != null
+        ? `<span class="${t.pnl>=0?'ppos':'pneg'}">${fmtP(t.pnl)}${pct!==null?`<br><span style="font-size:11px">${pct>=0?'+':''}${pct.toFixed(2)}%</span>`:''}</span>`
+        : '—'}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('fund-sold-tfoot').innerHTML = `
+    <tr><td colspan="5">合計</td>
+    <td style="text-align:right;color:var(--green-text)">${fmt(soldAmt)}</td>
+    <td style="text-align:right"><span class="${soldPnl>=0?'ppos':'pneg'}">${fmtP(soldPnl)}</span></td></tr>`;
+}
+
+/* ───────────────────────────────────────────────
+   MAIN RENDER
+─────────────────────────────────────────────── */
+function renderAll() {
+  const vmap = { all:'全部交易紀錄', holding:'目前庫存持股', history:'歷史交易紀錄', funds:'可用資金總覽' };
+  document.getElementById('view-desc').textContent = vmap[curView];
+  renderAlerts();
+  if (curView === 'funds') { renderFunds(); return; }
+  const f = getFiltered();
+  renderMetrics(f);
+  renderTable(f);
+}
+
+/* ───────────────────────────────────────────────
+   INLINE PRICE UPDATES
+─────────────────────────────────────────────── */
+function updateCur(id, val) {
+  const t = trades.find(x => x.id === id);
+  if (t) { t.curPrice = parseFloat(val) || null; save(); renderAll(); }
+}
+function updateTarget(id, val) {
+  const t = trades.find(x => x.id === id);
+  if (t) { t.targetPrice = parseFloat(val) || null; save(); renderAll(); }
+}
+
+/* ───────────────────────────────────────────────
+   MODAL
+─────────────────────────────────────────────── */
+function toggleSell() {
+  const isSell = document.getElementById('f-type').value === 'sell';
+  ['s-div','s-label','s-date','s-price'].forEach(id => {
+    document.getElementById(id).style.display = isSell ? '' : 'none';
+  });
+  calcPreview();
+}
+
+function calcPreview() {
+  const isSell = document.getElementById('f-type').value === 'sell';
+  const sh = parseFloat(document.getElementById('f-shares').value) || 0;
+  const bp = parseFloat(document.getElementById('f-bp').value) || 0;
+  const sp = parseFloat(document.getElementById('f-sp').value) || 0;
+  const bd = document.getElementById('f-bd').value;
+  const sd = document.getElementById('f-sd').value;
+  const box = document.getElementById('preview-box');
+  if (!isSell || !sh || !bp) { box.style.display = 'none'; return; }
+  box.style.display = 'flex';
+  const ba  = sh * bp;
+  const sa  = sp ? sh * sp : null;
+  const pnl = sa ? sa - ba : null;
+  const d   = daysBetween(bd, sd);
+  document.getElementById('c-ba').textContent   = fmt(ba);
+  document.getElementById('c-sa').textContent   = sa ? fmt(sa) : '—';
+  const cpnl = document.getElementById('c-pnl');
+  cpnl.textContent  = pnl !== null ? fmtP(pnl) : '—';
+  cpnl.style.color  = pnl > 0 ? 'var(--green)' : pnl < 0 ? 'var(--red)' : '';
+  document.getElementById('c-days').textContent = d !== null ? (d === 0 ? '當沖' : d + '天') : '—';
+}
+
+function openModal(id) {
+  editId = id || null;
+  document.getElementById('modal-title').textContent = editId ? '編輯交易紀錄' : '新增交易紀錄';
+  if (editId) {
+    const t = trades.find(x => x.id === editId);
+    document.getElementById('f-bd').value     = t.buyDate;
+    document.getElementById('f-type').value   = t.type === 'sell' ? 'sell' : 'buy';
+    document.getElementById('f-code').value   = t.code;
+    document.getElementById('f-name').value   = t.name;
+    document.getElementById('f-shares').value = t.shares;
+    document.getElementById('f-bp').value     = t.buyPrice;
+    document.getElementById('f-cp').value     = t.curPrice || '';
+    document.getElementById('f-tp').value     = t.targetPrice || '';
+    document.getElementById('f-sd').value     = t.sellDate || '';
+    document.getElementById('f-sp').value     = t.sellPrice || '';
+    document.getElementById('f-pnl').value    = t.pnl != null ? t.pnl : '';
+    document.getElementById('f-note').value   = t.note || '';
+  } else {
+    document.getElementById('f-bd').value = new Date().toISOString().slice(0,10);
+    document.getElementById('f-type').value = 'buy';
+    ['f-code','f-name','f-shares','f-bp','f-cp','f-tp','f-sd','f-sp','f-pnl','f-note']
+      .forEach(id => document.getElementById(id).value = '');
+  }
+  toggleSell();
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+function closeMBg(e) {
+  if (e.target.id === 'modal-overlay') closeModal();
+}
+
+function delRecord(id) {
+  if (!confirm('確定刪除這筆紀錄？')) return;
+  trades = trades.filter(t => t.id !== id);
+  save(); buildPeriodSelect(); renderAll();
+}
+
+function saveRecord() {
+  const buyDate    = document.getElementById('f-bd').value;
+  const type       = document.getElementById('f-type').value === 'sell' ? 'sell' : 'buy';
+  const code       = document.getElementById('f-code').value.trim();
+  const name       = document.getElementById('f-name').value.trim();
+  const shares     = parseInt(document.getElementById('f-shares').value);
+  const buyPrice   = parseFloat(document.getElementById('f-bp').value);
+  const curPrice   = parseFloat(document.getElementById('f-cp').value) || null;
+  const targetPrice= parseFloat(document.getElementById('f-tp').value) || null;
+  const sellDate   = document.getElementById('f-sd').value || null;
+  const sellPrice  = parseFloat(document.getElementById('f-sp').value) || null;
+  const pnlInput   = document.getElementById('f-pnl').value;
+  const note       = document.getElementById('f-note').value.trim();
+  let   pnl        = pnlInput !== ''
+    ? parseFloat(pnlInput)
+    : (type === 'sell' && sellPrice ? shares * (sellPrice - buyPrice) : null);
+
+  if (!buyDate || !code || !name || !shares || !buyPrice) {
+    alert('請填寫所有必填欄位（*）'); return;
+  }
+  if (editId) {
+    const idx = trades.findIndex(t => t.id === editId);
+    trades[idx] = { ...trades[idx], buyDate, type, code, name, shares, buyPrice, curPrice, targetPrice, sellDate, sellPrice, pnl, note };
+  } else {
+    trades.push({ id: nextId++, buyDate, type, code, name, shares, buyPrice, curPrice, targetPrice, sellDate, sellPrice, pnl, note });
+  }
+  save(); closeModal(); buildPeriodSelect(); renderAll();
+}
+
+/* ───────────────────────────────────────────────
+   BOOT
+─────────────────────────────────────────────── */
+// 清除所有舊版 key，強制使用最新資料
+['stockTrackerV1','stockTrackerV2','stockTradesV2','stockTradesV1','stockV3','stockV4','stockV5'].forEach(k => localStorage.removeItem(k));
+buildPeriodSelect();
+renderAll();
+</script>
+</body>
+</html>
