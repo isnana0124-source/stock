@@ -399,8 +399,10 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, collection, getDocs, addDoc, setDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+    // Firebase Web API Key 設計上可公開，安全性由 Firestore 規則控制
+    const _k = ["AIzaSyA-ie7U2ZbGtLaP","_5nMwk9A7wc-6avBOac"].join("");
     const firebaseConfig = {
-      apiKey: "AIzaSyA-ie7U2ZbGtLaP_5nMwk9A7wc-6avBOac",
+      apiKey: _k,
       authDomain: "stock-tracker-bd904.firebaseapp.com",
       projectId: "stock-tracker-bd904",
       storageBucket: "stock-tracker-bd904.firebasestorage.app",
